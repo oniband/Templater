@@ -2,7 +2,6 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
-#include <iostream>
 #include <iterator>
 #include <print>
 #include <string>
@@ -23,7 +22,7 @@ int main(int argc, char **argv) {
   // Make sure we have args
   if (arguments.begin() == arguments.end()) {
     std::println("no args passed, printing help");
-    return 0;
+    return EXIT_SUCCESS;
   }
 
   // Check for -h and -v
@@ -31,24 +30,25 @@ int main(int argc, char **argv) {
 
     if (*it == "--help" || *it == "-h") {
       std::println("help");
-      return 0;
+      return EXIT_SUCCESS;
     }
 
     if (*it == "--version" || *it == "-v") {
       std::println("0.1");
-      return 0;
+      return EXIT_SUCCESS;
     }
   }
 
   // Check for Home
   std::string config_file_directory;
   std::string config_file_path;
-  if (const auto home = std::getenv("HOME")) {
-    config_file_directory = home + std::string("/.config/templater/");
+  const auto HOME = std::getenv("HOME");
+  if (HOME) {
+    config_file_directory = HOME + std::string("/.config/templater/");
     config_file_path = config_file_directory + CONFIG_FILE_NAME;
   } else {
     std::println("$HOME not set! Quitting...");
-    return 1;
+    return EXIT_FAILURE;
   }
 
   // Check if config directory Exists, Create if not
@@ -81,26 +81,61 @@ int main(int argc, char **argv) {
       std::println("Use -h for help or check "
                    "https://github.com/oniband/Templater/tree/main for a "
                    "configuration guide!");
-      return 0;
+      return EXIT_SUCCESS;
     }
   }
 
-  // Make sure the first argument has a corresponding config
+  // Make sure the first argument has a corresponding config with an object
   std::string chosen_template;
+  json chosen_template_options;
   auto argument_iterator = arguments.begin();
 
-  if (config_json.contains(*argument_iterator)) {
+  if (config_json.contains(*argument_iterator) &&
+      config_json[*argument_iterator].type() == json::object()) {
     chosen_template = *argument_iterator;
-    if (std::next(argument_iterator) == arguments.end()) {
-      std::println("Too few arguments, run \'templater -h\' for usage guide.");
-      return 0;
-    }
+    chosen_template_options = config_json[*argument_iterator];
   } else {
-    std::println("No config called {} found", *argument_iterator);
-    return 1;
+    std::println("No template called {} found with matching configuration",
+                 *argument_iterator);
+    return EXIT_FAILURE;
   }
 
+  // Advance arg iterator
+  if (std::next(argument_iterator) == arguments.end()) {
+    std::println("Too few arguments, run \'templater -h\' for usage guide.");
+    return EXIT_SUCCESS;
+  } else {
+    argument_iterator++;
+  }
 
-  
+  // Check destination arguments. handle HOME and .(current dir)
+  std::string template_destination;
+  std::string second_argument = *argument_iterator;
+  if (*argument_iterator == ".") {
+    template_destination = std::filesystem::current_path();
+  } else if (second_argument.substr(0) == "~" && std::filesystem::exists(HOME + second_argument)) {
+    template_destination = HOME + second_argument;
+  } else if (std::filesystem::exists(second_argument)){
+    template_destination = second_argument;
+  } else {
+    std::println("Mangled destination specifier");
+    return EXIT_FAILURE;
+  }
+
+  // Advance arg iterator
+  if (std::next(argument_iterator) == arguments.end()) {
+    std::println("Too few arguments, run \'templater -h\' for usage guide.");
+    return EXIT_SUCCESS;
+  } else {
+    argument_iterator++;
+  }
+
+  // Validate template
+  for (json::iterator it = chosen_template_options.begin();
+       it != chosen_template_options.end(); ++it) {
+    if (it.key() == "source_directory") {
+    }
+  }
+
   return 0;
 }
