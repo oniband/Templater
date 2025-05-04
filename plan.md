@@ -6,9 +6,9 @@ This could absolutely be a bash script but I just want an excuse to program some
 # JSON structure
 ```json
 {
-    templates: 
-                cpp: {sourcedir: "~/templates/cpp"},
-                opengl: { sourcedir: "~/templates/opengl"},
+    "templates": 
+                "cpp": { "sourcedir": "~/templates/cpp"},
+                "opengl": { "sourcedir": "~/templates/opengl"},
 }
 ```
 # Examples
