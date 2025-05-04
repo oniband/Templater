@@ -17,18 +17,6 @@ const std::string DEFAULT_CONFIG = R"(
 )";
 
 int main(int argc, char **argv) {
-  std::string config_directory;
-  std::string config_path;
-  // Check for Home
-  if (const auto home = std::getenv("HOME")) {
-    config_directory = home;
-    config_directory += "/.config/templater/";
-    config_path = config_directory + CONFIG_FILE_NAME;
-  } else {
-    std::println("$HOME not set! Quitting...");
-    return 1;
-  }
-
   // Check args
   std::vector<std::string> arguments = {argv + 1, argv + argc};
   for (auto it = arguments.begin(); it != arguments.end(); it++) {
@@ -43,6 +31,19 @@ int main(int argc, char **argv) {
       return 0;
     }
   }
+
+  // Check for Home
+  std::string config_directory;
+  std::string config_path;
+  if (const auto home = std::getenv("HOME")) {
+    config_directory = home;
+    config_directory += "/.config/templater/";
+    config_path = config_directory + CONFIG_FILE_NAME;
+  } else {
+    std::println("$HOME not set! Quitting...");
+    return 1;
+  }
+
 
   // Check if config directory Exists, Create if not
   if (!std::filesystem::exists(config_directory)) {
