@@ -134,6 +134,11 @@ int main(int argc, char **argv) {
   for (json::iterator it = chosen_template_options.begin();
        it != chosen_template_options.end(); ++it) {
     if (it.key() == "source_directory") {
+    } else {
+      std::println("invalid option detected in config:");
+      std::println("{}", it->dump());
+      std::println("Quitting...");
+      return EXIT_FAILURE;
     }
   }
 
