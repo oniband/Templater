@@ -12,6 +12,20 @@ using json = nlohmann::json;
 
 namespace fs = std::filesystem;
 
+const float VERSION = 1.0;
+const std::string HELP = R"(
+Templater - A tool for making new projects quickly by oniband
+  usage: 
+            templater <template_name> <destination> <project_name>
+  arguments:
+            -h || --help - prints out this message!
+            -v || --version - prints out the version of this program.
+            <template_name> - The name you specified in config.json
+            <destination> - Where you want the new project.
+            <project_name> - The name you want the project(folder) to be called.
+  example:
+            templater c++ . my_new_project
+)";
 const std::string CONFIG_FILE_NAME = "config.json";
 const std::string DEFAULT_CONFIG = R"(
 {
@@ -25,19 +39,19 @@ int main(int argc, char **argv) {
   std::vector<std::string> arguments = {argv + 1, argv + argc};
   // Make sure we have args
   if (arguments.begin() == arguments.end()) {
-    std::println("no args passed, printing help");
+    std::println("{}",HELP);
     return EXIT_SUCCESS;
   }
 
   // Check for -h and -v
   for (auto it = arguments.begin(); it != arguments.end(); it++) {
     if (*it == "--help" || *it == "-h") {
-      std::println("help");
+      std::println("{}", HELP);
       return EXIT_SUCCESS;
     }
 
     if (*it == "--version" || *it == "-v") {
-      std::println("0.1");
+      std::println("{}", VERSION);
       return EXIT_SUCCESS;
     }
   }
