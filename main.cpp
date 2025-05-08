@@ -27,7 +27,6 @@ int main(int argc, char **argv) {
 
   // Check for -h and -v
   for (auto it = arguments.begin(); it != arguments.end(); it++) {
-
     if (*it == "--help" || *it == "-h") {
       std::println("help");
       return EXIT_SUCCESS;
@@ -103,7 +102,7 @@ int main(int argc, char **argv) {
   // Advance arg iterator
   if (std::next(argument_iterator) == arguments.end()) {
     std::println("Too few arguments, run \'templater -h\' for usage guide.");
-    return EXIT_SUCCESS;
+    return EXIT_FAILURE;
   } else {
     argument_iterator++;
   }
@@ -113,9 +112,10 @@ int main(int argc, char **argv) {
   std::string second_argument = *argument_iterator;
   if (*argument_iterator == ".") {
     template_destination = std::filesystem::current_path();
-  } else if (second_argument.substr(0) == "~" && std::filesystem::exists(HOME + second_argument)) {
+  } else if (second_argument.substr(0) == "~" &&
+             std::filesystem::exists(HOME + second_argument)) {
     template_destination = HOME + second_argument;
-  } else if (std::filesystem::exists(second_argument)){
+  } else if (std::filesystem::exists(second_argument)) {
     template_destination = second_argument;
   } else {
     std::println("Mangled destination specifier");
@@ -125,18 +125,36 @@ int main(int argc, char **argv) {
   // Advance arg iterator
   if (std::next(argument_iterator) == arguments.end()) {
     std::println("Too few arguments, run \'templater -h\' for usage guide.");
-    return EXIT_SUCCESS;
+    return EXIT_FAILURE;
   } else {
     argument_iterator++;
   }
 
   // Validate template
+  std::vector<std::string> directories;
   for (json::iterator it = chosen_template_options.begin();
        it != chosen_template_options.end(); ++it) {
     if (it.key() == "source_directory") {
+      // Replace ~ with HOME
+      std::string dir = it.value();
+      if (dir.find("~") == 0) {
+        dir.erase(0, 1);
+        if (std::filesystem::exists(HOME + dir)) {
+          directories.push_back(HOME + dir);
+        } else {
+          std::println("Invalid use of ~ found in {}", chosen_template);
+          std::println("Quitting...");
+          return EXIT_FAILURE;
+        }
+      } else if (std::filesystem::exists(dir)) {
+        directories.push_back(dir);
+      } else {
+        std::println("Directory {} not found in {} template", dir, chosen_template);
+        std::println("Quitting...");
+        return EXIT_FAILURE;
+      }
     } else {
-      std::println("invalid option detected in config:");
-      std::println("{}", it->dump());
+      std::println("invalid option detected in config: {}", it->dump());
       std::println("Quitting...");
       return EXIT_FAILURE;
     }
