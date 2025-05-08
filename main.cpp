@@ -10,12 +10,16 @@
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
+namespace fs = std::filesystem;
+
 const std::string CONFIG_FILE_NAME = "config.json";
 const std::string DEFAULT_CONFIG = R"(
 {
   "default": true
 }
 )";
+
+void recursive_copy(const fs::path &source, const fs::path &destination);
 
 int main(int argc, char **argv) {
   std::vector<std::string> arguments = {argv + 1, argv + argc};
@@ -51,15 +55,15 @@ int main(int argc, char **argv) {
   }
 
   // Check if config directory Exists, Create if not
-  if (!std::filesystem::exists(config_file_directory)) {
+  if (!fs::exists(config_file_directory)) {
     std::println("Templater folder not found in {}. Creating...",
                  config_file_directory);
-    std::filesystem::create_directory(config_file_directory);
+    fs::create_directory(config_file_directory);
   }
 
   // Check if config file Exists, Create if not
   json config_json;
-  if (std::filesystem::exists(config_file_path)) {
+  if (fs::exists(config_file_path)) {
     std::ifstream json_file_handle(config_file_path);
     config_json = json::parse(json_file_handle);
     json_file_handle.close();
@@ -111,11 +115,8 @@ int main(int argc, char **argv) {
   std::string template_destination;
   std::string second_argument = *argument_iterator;
   if (*argument_iterator == ".") {
-    template_destination = std::filesystem::current_path();
-  } else if (second_argument.substr(0) == "~" &&
-             std::filesystem::exists(HOME + second_argument)) {
-    template_destination = HOME + second_argument;
-  } else if (std::filesystem::exists(second_argument)) {
+    template_destination = fs::current_path();
+  } else if (fs::exists(second_argument)) {
     template_destination = second_argument;
   } else {
     std::println("Mangled destination specifier");
@@ -139,17 +140,18 @@ int main(int argc, char **argv) {
       std::string dir = it.value();
       if (dir.find("~") == 0) {
         dir.erase(0, 1);
-        if (std::filesystem::exists(HOME + dir)) {
+        if (fs::exists(HOME + dir)) {
           directories.push_back(HOME + dir);
         } else {
           std::println("Invalid use of ~ found in {}", chosen_template);
           std::println("Quitting...");
           return EXIT_FAILURE;
         }
-      } else if (std::filesystem::exists(dir)) {
+      } else if (fs::exists(dir)) {
         directories.push_back(dir);
       } else {
-        std::println("Directory {} not found in {} template", dir, chosen_template);
+        std::println("Directory {} not found in {} template", dir,
+                     chosen_template);
         std::println("Quitting...");
         return EXIT_FAILURE;
       }
@@ -160,5 +162,18 @@ int main(int argc, char **argv) {
     }
   }
 
+  // Copy over files to new project
+  std::string project_path = template_destination + "/" + *argument_iterator;
+  for (auto dir_it = directories.begin(); dir_it != directories.end();
+       ++dir_it) {
+    std::string source_dir = *dir_it;
+    // recursive_copy(source_dir, project_path);
+    std::string command = "cp -r " + source_dir + " " + project_path;
+    try {
+        std::system(command.c_str());
+    } catch (const std::system_error& e) {
+      std::print("Error in copying files: \n{}\n", e.what());
+    }
+  }
   return 0;
 }
