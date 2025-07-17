@@ -33,8 +33,6 @@ const std::string DEFAULT_CONFIG = R"(
 }
 )";
 
-void recursive_copy(const fs::path &source, const fs::path &destination);
-
 int main(int argc, char **argv) {
   std::vector<std::string> arguments = {argv + 1, argv + argc};
   // Make sure we have args
