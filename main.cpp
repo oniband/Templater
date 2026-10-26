@@ -20,6 +20,7 @@ Templater - A tool for making new projects quickly by oniband
   arguments:
             -h || --help - prints out this message!
             -v || --version - prints out the version of this program.
+            -l || --list - Prints out all configs
             <template_name> - The name you specified in config.json
             <destination> - Where you want the new project.
             <project_name> - The name you want the project(folder) to be called.
@@ -52,8 +53,8 @@ int main(int argc, char **argv) {
       std::println("{}", VERSION);
       return EXIT_SUCCESS;
     }
-  }
 
+  }
   // Check for Home
   std::string config_file_directory;
   std::string config_file_path;
@@ -80,7 +81,7 @@ int main(int argc, char **argv) {
     config_json = json::parse(json_file_handle);
     json_file_handle.close();
   } else {
-    std::println("templater.json not found, generating default config.");
+    std::println("config.json not found, generating default config.");
 
     std::ofstream created_config_file(config_file_path);
     created_config_file << DEFAULT_CONFIG;
@@ -96,6 +97,16 @@ int main(int argc, char **argv) {
       std::println("Use -h for help or check "
                    "https://github.com/oniband/Templater/tree/main for a "
                    "configuration guide!");
+      return EXIT_SUCCESS;
+    }
+  }
+
+  //Check of -l
+  for (auto it = arguments.begin(); it != arguments.end(); it++) {
+    if (*it == "--list" || *it == "-l") {
+      for (json::iterator json_it = config_json.begin(); json_it != config_json.end(); ++json_it) {
+        std::println("{}", json_it.key());
+      }
       return EXIT_SUCCESS;
     }
   }
@@ -179,7 +190,6 @@ int main(int argc, char **argv) {
   for (auto dir_it = directories.begin(); dir_it != directories.end();
        ++dir_it) {
     std::string source_dir = *dir_it;
-    // recursive_copy(source_dir, project_path);
     std::string command = "cp -r " + source_dir + " " + project_path;
     try {
         std::system(command.c_str());
